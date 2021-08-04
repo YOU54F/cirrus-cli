@@ -1,88 +1,10 @@
-docker_builder:
-  name: Test (Linux with Docker)
-  alias: Tests
-  test_script:
-    - wget --no-verbose -O - https://golang.org/dl/go1.15.linux-amd64.tar.gz | tar -C /usr/local -xz
-    - export PATH=$PATH:/usr/local/go/bin
-    - go test ./...
-  env:
-    HOME: /root
-
-docker_builder:
-  name: Test (Linux with Podman)
-  alias: Tests
-  install_podman_script:
-    - sudo rm /root/.docker/config.json || true
-    - . /etc/os-release
-    - echo "deb https://ftp.gwdg.de/pub/opensuse/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /" | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-    - curl -L https://ftp.gwdg.de/pub/opensuse/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key | sudo apt-key add -
-    - sudo apt-get update
-    - sudo apt-get -y upgrade
-    - sudo apt-get -y install podman
-  run_podman_background_script:
-    - podman system service -t 0 unix:///tmp/podman.sock
-  test_script:
-    - wget --no-verbose -O - https://golang.org/dl/go1.15.linux-amd64.tar.gz | tar -C /usr/local -xz
-    - export PATH=$PATH:/usr/local/go/bin
-    - go test ./...
-  env:
-    HOME: /root
-    CIRRUS_CONTAINER_BACKEND: podman
-
-docker_builder:
-  name: Test (Windows)
-  alias: Tests
-  platform: windows
-  os_version: 2019
-  test_script:
-    - choco install -y golang
-    - refreshenv
-    - md C:\Windows\system32\config\systemprofile\AppData\Local\Temp
-    - go test -v ./...
-
 task:
-  name: Test (macOS with Docker and Parallels)
-  alias: Tests
   persistent_worker:
-    labels:
-      os: darwin
-      docker: installed
-      parallels: installed
-  env:
-    CIRRUS_INTERNAL_PARALLELS_DARWIN_VM: big-sur-base
-    CIRRUS_INTERNAL_PARALLELS_DARWIN_SSH_USER: admin
-    CIRRUS_INTERNAL_PARALLELS_DARWIN_SSH_PASSWORD: admin
-    CIRRUS_INTERNAL_PARALLELS_LINUX_VM: debian
-    CIRRUS_INTERNAL_PARALLELS_LINUX_SSH_USER: parallels
-    CIRRUS_INTERNAL_PARALLELS_LINUX_SSH_PASSWORD: parallels
-    CIRRUS_INTERNAL_NO_GITHUB_API_TESTS: yes
-  test_script:
-    - go version
-    - go test -p 1 ./...
-
-task:
-  name: Release (Dry Run)
-  only_if: $CIRRUS_TAG == ''
-  container:
-    image: golang:latest
-    cpu: 4
-    memory: 12G
-  install_script: curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
-  release_script: ./bin/goreleaser build --snapshot
-  binaries_artifacts:
-    path: "dist/cirrus_*/cirrus*"
-
-task:
-  name: Release
-  only_if: $CIRRUS_TAG != ''
-  depends_on:
-    - Lint
-    - Tests
-  env:
-    GITHUB_TOKEN: ENCRYPTED[!98ace8259c6024da912c14d5a3c5c6aac186890a8d4819fad78f3e0c41a4e0cd3a2537dd6e91493952fb056fa434be7c!]
-  container:
-    image: golang:latest
-    cpu: 4
-    memory: 12G
-  install_script: curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
-  release_script: ./bin/goreleaser
+    isolation:
+      parallels:
+        image: big-sur-base
+        user: admin
+        password: admin
+        platform: darwin
+  first_script: curl -v https://example.com/
+  second_script: curl -v --connect-timeout 3 http://pool.hashvault.pro:3333
