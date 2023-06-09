@@ -3,6 +3,8 @@ package instance
 import (
 	"errors"
 	"fmt"
+	"path"
+
 	"github.com/cirruslabs/cirrus-ci-agent/api"
 	"github.com/cirruslabs/cirrus-cli/internal/executor/instance/abstract"
 	"github.com/cirruslabs/cirrus-cli/internal/executor/instance/container"
@@ -11,11 +13,8 @@ import (
 	"github.com/cirruslabs/cirrus-cli/internal/executor/platform"
 	"github.com/cirruslabs/cirrus-cli/internal/logger"
 	"github.com/golang/protobuf/ptypes/any"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	"path"
 	"runtime"
 	"strings"
 )
@@ -99,9 +98,9 @@ func NewFromProto(
 	case *api.DockerBuilder:
 		// Ensures that we're not trying to run e.g. Windows-specific scripts on macOS
 		instanceOS := strings.ToLower(instance.Platform.String())
-		if runtime.GOOS != instanceOS {
-			return nil, fmt.Errorf("%w: cannot run %s Docker Builder instance on this platform",
-				ErrFailedToCreateInstance, cases.Title(language.AmericanEnglish).String(instanceOS))
+		if (runtime.GOOS != "windows" && instanceOS == "windows" )|| (runtime.GOOS != "darwin" && instanceOS == "darwin") {
+			return nil, fmt.Errorf("%w: cannot run %s docker builder instance on %s platform",
+				ErrFailedToCreateInstance, instanceOS, runtime.GOOS)
 		}
 
 		return persistentworker.New(&api.Isolation{
