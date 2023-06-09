@@ -146,6 +146,7 @@ func (backend *Docker) ImageBuild(
 			BuildArgs:  pointyArguments,
 			Remove:     true,
 			PullParent: input.Pull,
+			// Platform: "amd64",
 		})
 		if err != nil {
 			errChan <- err

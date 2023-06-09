@@ -15,6 +15,7 @@ type PrebuiltInstance struct {
 	Image      string
 	Dockerfile string
 	Arguments  map[string]string
+	// Architecture string
 }
 
 func CreateTempArchive(dir string) (string, error) {
@@ -128,6 +129,8 @@ func (prebuilt *PrebuiltInstance) Run(ctx context.Context, config *runconfig.Run
 		Dockerfile: prebuilt.Dockerfile,
 		BuildArgs:  prebuilt.Arguments,
 		Pull:       !config.ContainerOptions.LazyPull,
+		// Architecture: prebuilt.Architecture,
+		// Architecture: "amd64",
 	})
 
 Outer:
