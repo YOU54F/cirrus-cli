@@ -161,7 +161,7 @@ task:
     labels:
       os: darwin
     isolation:
-      paralllels:
+      parallels:
         image: big-sur-xcode # locally registered VM
         # username and password for SSHing into the VM to start a task
         user: admin
