@@ -10,6 +10,7 @@ import (
 	upstreampkg "github.com/cirruslabs/cirrus-cli/internal/worker/upstream"
 	"github.com/getsentry/sentry-go"
 	"net/url"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -45,7 +46,7 @@ func (worker *Worker) runTask(
 		Secret: agentAwareTask.ClientSecret,
 	}
 
-	inst, err := persistentworker.New(agentAwareTask.Isolation, worker.logger)
+	inst, err := persistentworker.New(agentAwareTask.Isolation, worker.security, worker.logger)
 	if err != nil {
 		worker.logger.Errorf("failed to create an instance for the task %d: %v", agentAwareTask.TaskId, err)
 		_ = upstream.TaskFailed(taskCtx, &api.TaskFailedRequest{
@@ -57,6 +58,9 @@ func (worker *Worker) runTask(
 	}
 
 	go func() {
+		localHub := sentry.CurrentHub().Clone()
+		taskCtx = sentry.SetHubOnContext(taskCtx, localHub)
+
 		defer func() {
 			if err := inst.Close(); err != nil {
 				worker.logger.Errorf("failed to close persistent worker instance for task %d: %v",
@@ -114,9 +118,14 @@ func (worker *Worker) runTask(
 			boundedCtx, cancel := context.WithTimeout(context.Background(), perCallTimeout)
 			defer cancel()
 
-			sentry.WithScope(func(scope *sentry.Scope) {
+			localHub.WithScope(func(scope *sentry.Scope) {
 				scope.SetTags(cirrusSentryTags)
-				sentry.CaptureException(err)
+
+				buf := make([]byte, 1*1024*1024)
+				n := runtime.Stack(buf, true)
+				scope.SetExtra("Stack trace for all goroutines", string(buf[:n]))
+
+				localHub.CaptureException(err)
 			})
 
 			err := upstream.TaskFailed(boundedCtx, &api.TaskFailedRequest{
@@ -126,10 +135,10 @@ func (worker *Worker) runTask(
 			if err != nil {
 				worker.logger.Errorf("failed to notify the server about the failed task %d: %v",
 					agentAwareTask.TaskId, err)
-				sentry.WithScope(func(scope *sentry.Scope) {
+				localHub.WithScope(func(scope *sentry.Scope) {
 					scope.SetTags(cirrusSentryTags)
 					scope.SetLevel(sentry.LevelFatal)
-					sentry.CaptureMessage(fmt.Sprintf("failed to notify the server about the failed task: %v", err))
+					localHub.CaptureMessage(fmt.Sprintf("failed to notify the server about the failed task: %v", err))
 				})
 			}
 		}
@@ -140,10 +149,10 @@ func (worker *Worker) runTask(
 		if err = upstream.TaskStopped(boundedCtx, taskIdentification); err != nil {
 			worker.logger.Errorf("failed to notify the server about the stopped task %d: %v",
 				agentAwareTask.TaskId, err)
-			sentry.WithScope(func(scope *sentry.Scope) {
+			localHub.WithScope(func(scope *sentry.Scope) {
 				scope.SetTags(cirrusSentryTags)
 				scope.SetLevel(sentry.LevelFatal)
-				sentry.CaptureMessage(fmt.Sprintf("failed to notify the server about the stopped task: %v", err))
+				localHub.CaptureMessage(fmt.Sprintf("failed to notify the server about the stopped task: %v", err))
 			})
 			return
 		}
