@@ -1,6 +1,7 @@
 package parallels
 
 import (
+	"runtime"
 	"context"
 	"errors"
 	"fmt"
@@ -67,8 +68,10 @@ func (parallels *Parallels) Run(ctx context.Context, config *runconfig.RunConfig
 		return fmt.Errorf("%w: failed to retrieve VM %q IP-address: %v", ErrFailed, vm.name, err)
 	}
 
+	// NOTE:- The agent was previously set only for amd64. this will now use the goarch.
+	// Ideally we should read this from the cirrus.yml file and pass it through
 	return remoteagent.WaitForAgent(ctx, parallels.logger, ip,
-		parallels.sshUser, parallels.sshPassword, parallels.agentOS, "amd64",
+		parallels.sshUser, parallels.sshPassword, parallels.agentOS, runtime.GOARCH,
 		config, vm.ClonedFromSuspended(), nil, "")
 }
 
