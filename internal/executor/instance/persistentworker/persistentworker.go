@@ -43,8 +43,8 @@ func New(isolation *api.Isolation, security *security.Security, logger logger.Li
 				"security settings", ErrInvalidIsolation)
 		}
 
-		if iso.Parallels.Platform != api.Platform_DARWIN && iso.Parallels.Platform != api.Platform_LINUX {
-			return nil, fmt.Errorf("%w: only Darwin and Linux are currently supported for Parallels",
+		if iso.Parallels.Platform != api.Platform_DARWIN && iso.Parallels.Platform != api.Platform_LINUX && iso.Parallels.Platform != api.Platform_WINDOWS {
+			return nil, fmt.Errorf("%w: only Darwin Linux & Windows are currently supported for Parallels",
 				ErrInvalidIsolation)
 		}
 		// if runtime.GOARCH != "amd64" {

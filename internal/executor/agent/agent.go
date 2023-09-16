@@ -22,28 +22,29 @@ func RetrieveBinary(
 	if err != nil {
 		return "", err
 	}
-
 	agentCacheDir := filepath.Join(cacheDir, "cirrus", "agent")
-
+	
+	
 	if err := os.MkdirAll(agentCacheDir, 0700); err != nil {
 		return "", err
 	}
-
+	
 	var agentSuffix string
 	if agentOS == "windows" {
 		agentSuffix = ".exe"
 	}
-
+	
+	_ = fmt.Sprintf("cirrus-ci-agent-%s-%s-%s%s", agentVersion, agentOS, agentArchitecture, agentSuffix)
 	agentPath := filepath.Join(
 		agentCacheDir,
 		fmt.Sprintf("cirrus-ci-agent-%s-%s-%s%s", agentVersion, agentOS, agentArchitecture, agentSuffix),
 	)
 
-	// Agent found in the cache
-	_, err = os.Stat(agentPath)
-	if err == nil {
-		return agentPath, nil
-	}
+	// // Agent found in the cache
+	// _, err = os.Stat(agentPath)
+	// if err == nil {
+	// 	return agentPath, nil
+	// }
 
 	tmpAgentFile, err := os.CreateTemp(agentCacheDir, "")
 	if err != nil {

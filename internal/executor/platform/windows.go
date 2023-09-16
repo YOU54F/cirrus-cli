@@ -50,7 +50,7 @@ func (platform *WindowsPlatform) ContainerCopyCommand(populate bool) *CopyComman
 	}
 
 	windowsAgentURL := fmt.Sprintf("https://github.com/cirruslabs/cirrus-ci-agent/releases/"+
-		"download/v%s/agent-windows-amd64.exe", DefaultAgentVersion)
+		"download/v%s/agent-windows-arm64.exe", DefaultAgentVersion)
 
 	copyCmd := fmt.Sprintf("(New-Object System.Net.WebClient).DownloadFile(\"%s\", \"%s\")",
 		windowsAgentURL, filepath.Join(copyCommand.CopiesAgentToDir, workingVolumeAgentBinary))

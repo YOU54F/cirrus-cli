@@ -36,7 +36,6 @@ func New(vmImage, sshUser, sshPassword, agentOS string, opts ...Option) (*Parall
 	for _, opt := range opts {
 		opt(parallels)
 	}
-
 	// Apply default options (to cover those that weren't specified)
 	if parallels.logger == nil {
 		parallels.logger = &logger.LightweightStub{}
@@ -76,7 +75,7 @@ func (parallels *Parallels) Run(ctx context.Context, config *runconfig.RunConfig
 }
 
 func (parallels *Parallels) WorkingDirectory(projectDir string, dirtyMode bool) string {
-	return platform.NewUnix().GenericWorkingDir()
+	return platform.NewWindows("11").GenericWorkingDir()
 }
 
 func (parallels *Parallels) Close() error {
